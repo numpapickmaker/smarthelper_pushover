@@ -40,9 +40,6 @@ float Raw_AM;
 int i;
 int check = 1;
 
-//const int ledPin =  12;      // D7
-//const int vibration = 2 ;
-//const int ledwifi = 13 ;
 int buttonState = 0;
 int program_mode= 0;
 
@@ -466,22 +463,24 @@ void send_notify() {
   po.setExpire(3600);
   Serial.println(po.send()); //should return 1 on success
 }
-void setup() {
-  pinMode(2, OUTPUT);
-  digitalWrite(2, LOW);
 
+void setup() {
   Serial.begin(115200);
+  
+  //set vibration to "Low" first
+  pinMode(vibration_motor, OUTPUT);
+  digitalWrite(vibration_motor, LOW);
+
+  //initialize IMU MPU6050
   Wire.begin();
   Serial.println("Initialize MPU");
   mpu.initialize();
   Serial.println(mpu.testConnection() ? "Connected" : "Connection failed");
   mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
 
-  // initialize the LED pin as an output:
-  pinMode(emergency_led, OUTPUT);
-  // initialize the pushbutton pin as an input:
+  // initialize input/output
   pinMode(confirm_button, INPUT);
-  //accelgyro.setXAccelOffset(0);
+  pinMode(emergency_led, OUTPUT);
   pinMode(vibration_motor, OUTPUT);
   pinMode(wifi_led, OUTPUT);
   prepareFile();
