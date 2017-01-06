@@ -438,7 +438,7 @@ void setup_apmode() {
 
 
 void send_notify() {
-  Pushover po = Pushover("atxx2at12gtx95rs4d54qn5unnw8xi", "uja9ap1p4ndz2et5b62114d93trhc2"); //a5730069b  "aniht4f1tap1bjfm3wcn1omu342kmq","urd352cyho726n3d9kvs5qdbgknk6r" //api key //user key
+  Pushover po = Pushover("a7bregkd9yfi3zxsy3rzjfmrepcpcu","g1ouije5mpjxgt6ba5r5f2ww3vh3wp"); //a5730069b  "aniht4f1tap1bjfm3wcn1omu342kmq","urd352cyho726n3d9kvs5qdbgknk6r" //api key //user key
   //po.setDevice("chrome");
   po.setMessage("WARNING!!!! FALL DETECTION");
   po.setSound("siren");
@@ -450,12 +450,19 @@ void send_notify() {
 void setup() {
   pinMode(2, OUTPUT);
   digitalWrite(2, LOW);
-#ifdef ESP8266
-  Wire.begin(5, 4);
-#endif
-  Serial.begin(9600);
+//#ifdef ESP8266
+//  Wire.begin(5, 4);
+//#endif
+//  Serial.begin(9600);
+//  accelgyro.initialize();
+//  accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
+  Serial.begin(115200);
+  Wire.begin();
+  Serial.println("Initialize MPU");
   accelgyro.initialize();
+  Serial.println(accelgyro.testConnection() ? "Connected" : "Connection failed");
   accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
+
   // initialize the LED pin as an output:
   pinMode(ledPin, OUTPUT);
   // initialize the pushbutton pin as an input:
