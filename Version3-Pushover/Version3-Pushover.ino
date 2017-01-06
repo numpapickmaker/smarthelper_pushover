@@ -1,31 +1,50 @@
+// 
+// I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
+// 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
+// Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
+
+// Pushover
 #include <ESP8266WiFi.h>
 #include "Pushover.h"
-#include <WiFiClient.h>
+
+// Connect to Wifi
 #include <ESP8266WebServer.h>
+#include <WiFiClient.h>
 #include "FS.h"
-MPU6050 accelgyro;
-int state = 0 ;
+
+//Pin input/output
+#define vibration_motor  2
+#define buzzer           10
+#define battery_led      12
+#define emergency_led    13
+#define wifi_led         14
+#define confirm_button   16 //OK
+#define battery_adc      A0
+
+//IMU MPU
+MPU6050 mpu;
 int16_t ax, ay, az, gx, gy, gz;
 float acx, acy, acz;
 float cx = 0, cy = 0 , cz = 0;//calibration
+
+//Timer
 unsigned long timer, preTime , timeOut;
+
+int state = 0 ;
 int tmp[2];
 int m;
 float Raw_AM;
 int i;
 int check = 1;
-const int buttonPin = 16;     // D0
-const int ledPin =  12;      // D7
-const int vibration = 2 ;
-const int ledwifi = 13 ;
+
+//const int ledPin =  12;      // D7
+//const int vibration = 2 ;
+//const int ledwifi = 13 ;
 int buttonState = 0;
 int program_mode= 0;
-//
-//const char* ssid     = "chatsada";
-//const char* password = "159357123";
 
 /*
    NodeMCU/ESP8266 act as AP (Access Point) and simplest Web Server
@@ -450,26 +469,21 @@ void send_notify() {
 void setup() {
   pinMode(2, OUTPUT);
   digitalWrite(2, LOW);
-//#ifdef ESP8266
-//  Wire.begin(5, 4);
-//#endif
-//  Serial.begin(9600);
-//  accelgyro.initialize();
-//  accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
+
   Serial.begin(115200);
   Wire.begin();
   Serial.println("Initialize MPU");
-  accelgyro.initialize();
-  Serial.println(accelgyro.testConnection() ? "Connected" : "Connection failed");
-  accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
+  mpu.initialize();
+  Serial.println(mpu.testConnection() ? "Connected" : "Connection failed");
+  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
 
   // initialize the LED pin as an output:
-  pinMode(ledPin, OUTPUT);
+  pinMode(emergency_led, OUTPUT);
   // initialize the pushbutton pin as an input:
-  pinMode(buttonPin, INPUT);
+  pinMode(confirm_button, INPUT);
   //accelgyro.setXAccelOffset(0);
-  pinMode(vibration, OUTPUT);
-  pinMode(ledwifi, OUTPUT);
+  pinMode(vibration_motor, OUTPUT);
+  pinMode(wifi_led, OUTPUT);
   prepareFile();
   timeOut = millis();
 }
@@ -487,7 +501,7 @@ void loop() {
   //  }
   timer = millis();
 
-  buttonState = digitalRead(buttonPin);
+  buttonState = digitalRead(confirm_button);
   if (program_mode == 0 ) {
     if (((timer - timeOut) / 1000) < 10) {
       if (buttonState == HIGH) {
@@ -503,7 +517,7 @@ void loop() {
         }
       } else {
         preTime = timer;
-        digitalWrite(ledPin, LOW);
+        digitalWrite(wifi_led, LOW);
       }
     } else {
       program_mode = 2;
@@ -522,7 +536,7 @@ void loop() {
       start_ap = 0;
     }
     server.handleClient();
-    digitalWrite(ledPin, LOW);
+    digitalWrite(wifi_led, LOW);
 
   }
   if (program_mode == 2) {
@@ -531,7 +545,7 @@ void loop() {
       //  digitalWrite(ledPin, LOW);
       //   ESP.restart();
       start_ap = 0;
-      digitalWrite(ledPin, HIGH);
+      digitalWrite(wifi_led, HIGH);
     }
     if (WiFi.status() != WL_CONNECTED) {
       setup_wifi();
@@ -543,7 +557,7 @@ void loop() {
     if (state == 0) {
 
      // buttonState = digitalRead(buttonPin);
-      accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+      mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
       acx = (ax + cx); //(16384 MPU6050_ACCEL_FS_2)
       acy = (ay + cy); //(2048 MPU6050_ACCEL_FS_16)
       acz = (az + cz);
@@ -575,7 +589,7 @@ void loop() {
         if ( timerAck >= 0.0) {
           Serial.println("I got some problem at state 0");
           delay(50);
-          digitalWrite(ledPin, HIGH);
+          digitalWrite(emergency_led, HIGH);
           state = 3; //
 
         }
@@ -586,22 +600,22 @@ void loop() {
 
     } else if (state == 1) {
       Serial.println((timer - timeOut) / 1000);
-      buttonState = digitalRead(buttonPin);
+      buttonState = digitalRead(confirm_button);
 
       if (((timer - timeOut) / 1000) < 4) {
-        digitalWrite(ledPin, LOW);
-        digitalWrite(vibration , LOW);
+        digitalWrite(emergency_led, LOW);
+        digitalWrite(vibration_motor , LOW);
         delay(500);
-        digitalWrite(ledPin, HIGH);
-        digitalWrite(vibration , HIGH);
+        digitalWrite(emergency_led, HIGH);
+        digitalWrite(vibration_motor , HIGH);
         delay(500);
 
         if (buttonState == HIGH) {
           unsigned long timerAck = ((timer - preTime) / 1000);
           if ( timerAck >= 1) {
             Serial.println("no problem ");
-            digitalWrite(ledPin, LOW);
-            digitalWrite(vibration , LOW);
+            digitalWrite(emergency_led, LOW);
+            digitalWrite(vibration_motor , LOW);
             delay(50);
             state = 5;
           }
@@ -619,12 +633,12 @@ void loop() {
       //buzzer , vibration on
 
       Serial.println("state2");
-      digitalWrite(ledPin, HIGH);
-      digitalWrite(vibration , HIGH);
+      digitalWrite(emergency_led, HIGH);
+      digitalWrite(vibration_motor , HIGH);
       delay(50);
-      buttonState = digitalRead(buttonPin);
-      digitalWrite(ledPin, LOW);
-      digitalWrite(vibration , LOW);
+      buttonState = digitalRead(confirm_button);
+      digitalWrite(emergency_led, LOW);
+      digitalWrite(vibration_motor , LOW);
       delay(50);
 
       if (buttonState == HIGH ) {
@@ -639,7 +653,7 @@ void loop() {
       }
 
     } else if (state == 3) {
-      buttonState = digitalRead(buttonPin);
+      buttonState = digitalRead(confirm_button);
       if (buttonState == HIGH) {
 
       } else {
@@ -648,7 +662,7 @@ void loop() {
         state = 2;
       }
     } else if (state == 4) {
-      buttonState = digitalRead(buttonPin);
+      buttonState = digitalRead(confirm_button);
       if (buttonState == HIGH) {
 
       } else {
@@ -656,7 +670,7 @@ void loop() {
         state = 0;
       }
     } else if (state == 5) {
-      buttonState = digitalRead(buttonPin);
+      buttonState = digitalRead(confirm_button);
       if (buttonState == HIGH) {
 
       } else {
