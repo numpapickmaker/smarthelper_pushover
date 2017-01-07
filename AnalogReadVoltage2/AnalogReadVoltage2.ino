@@ -48,7 +48,7 @@ void read_battery(){
   timer = millis();
   if (timer - preTime > 5000) {
     sensorValue = analogRead(A0);
-    if (sensorValue > 837 ) {
+    if (sensorValue < 837 ) {
       Serial.print("case1 : ");
       Serial.println(sensorValue);//*3.3/1024
       toggleLED = true;
