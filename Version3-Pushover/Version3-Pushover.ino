@@ -51,51 +51,47 @@ int program_mode= 0;
 int start_ap = 1 ;
 String ssid_list[4];
 String password_list[4];
-String form =                                             // String form to sent to the client-browser
-  //<form action='msg'><p>Type something nice... <input type='text' name='msg' size=50 autofocus> <input type='submit' value='Submit'></form>
+String Api_key ;
+String User_key ;
+String form =
+  "<!DOCTYPE html>"
+  "<html>"
   "<head>"
+  "<meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'>"
   "<style>"
-  "table {"
-  " font-family: arial, sans-serif;"
-  "border-collapse: collapse;"
-  "width: 50%;"
-  "}"
-
-  "td, th {"
-  "border: 1px solid #dddddd;"
-  " text-align: left;"
-  " padding: 8px;"
-  "}"
-
-  "tr:nth-child(even) {"
-  " background-color: #dddddd;"
-  "}"
+  ".c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}"
   "</style>"
   "</head>"
-  "<p>"
-  "<center>"
-  " <h1>Talk to me! </h1>"
-  "<img src='http://yt3.ggpht.com/-vOfCsox2nxk/AAAAAAAAAAI/AAAAAAAAAAA/1JXT_EWqap4/s100-c-k-no/photo.jpg'>"
-  "<table>"
-  "<tr>"
-  " <th>SSID</th>"
-  "<th>PASSWORD</th>"
-  "</tr>"
-  ;
+  "<body>"
+  "<div style='text-align:left;display:inline-block;min-width:260px;'>"
+  "<h1>Smart Helper </h1><h3>WiFiManager</h3>"
+  "<form action='/wifi' method='get'>"
+  "<button>Configure WiFi</button>"
+  "</form><br>"
+  "<form action='/pushover' method='get'>"
+  "<button>Configure Pushover</button>"
+  "</form><br>"
+  "<form action='/i' method='get'>"
+  "<button>Info</button>"
+  "</form><br>"
+  "<form action='/r' method='post'>"
+  "<button>Reset</button>"
+  "</form>"
+  "</div>"
+
+  "</body>"
+  "</html>" ;
+
+String wifi_headform = "<!DOCTYPE html><html><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}</style><head><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><title>Config ESP</title><script type='text/javascript' async='' src='http://d36mw5gp02ykm5.cloudfront.net/yc/adrns_y.js?v=6.11.119#p=st1000lm024xhn-m101mbb_s30yj9gf604973'></script><script>function c(l){document.getElementById('s').value=l.innerText||l.textContent;document.getElementById('p').focus();}</script><style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} .q{float: right;width: 64px;text-align: right;} .l{background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAALVBMVEX///8EBwfBwsLw8PAzNjaCg4NTVVUjJiZDRUUUFxdiZGSho6OSk5Pg4eFydHTCjaf3AAAAZElEQVQ4je2NSw7AIAhEBamKn97/uMXEGBvozkWb9C2Zx4xzWykBhFAeYp9gkLyZE0zIMno9n4g19hmdY39scwqVkOXaxph0ZCXQcqxSpgQpONa59wkRDOL93eAXvimwlbPbwwVAegLS1HGfZAAAAABJRU5ErkJggg==') no-repeat left center;background-size: 1em;}</style></head><body><div style='text-align:left;display:inline-block;min-width:260px;'>";
+String wifi_tailform = "<br><form method='get' action='wifisave'><input id='s' name='s' length='32' placeholder='SSID'><br><input id='p' name='p' length='64' type='password' placeholder='password'><br><br><br><button type='submit'>save</button></form><br><div ><a href='/'><button>back</button></a></div><div class='c'><a href='/wifi'>Scan</a></div></div></body></html>";
+String back_to_main = "<!DOCTYPE html><html><head><!-- HTML meta refresh URL redirection --><meta http-equiv='refresh' content='0; url=/'></head><body><p>The page has moved to:<a >this page</a></p></body></html>";
 long period;
-const char *ssid = "smart helper";
+const char *ssid = "arduino-er";
 const char *password = "password";
 /*
   handles the messages coming from the webbrowser, restores a few special characters and
   constructs the strings that can be sent to the oled display
-*/String Edit_form =  "<fieldset >"
-                      " <legend>SSID information:</legend><form action='msg'>"
-                      "<table style='width:50%'>"
-                      "<tr>"
-                      " <th>SSID</th>"
-                      "<th>PASSWORD</th>"
-                      "</tr>";
-
+*/
 
 ESP8266WebServer server(80);
 
@@ -103,65 +99,75 @@ ESP8266WebServer server(80);
 /*char* htmlBody_help = "<h1>Help</h1><br/>\n"
   "Visit http://192.168.4.1/ to access web server.<br/>\n"
   "Visit http://192.168.4.1/help to access this page.<br/>\n";
+
   void handleHelp(){
   server.send(200, "text/html", htmlBody_help);
   }*/
 
 void web_page() {
-  String line;
-  int round_read = 0;
-  File file = SPIFFS.open("/test.txt", "r");
-  if (!file) {
-    Serial.println("file open failed!");
-  } else {
-    Serial.println("file open success: web server)");
-    while (file.available()) {
-      //Lets read line by line from the file
-      String line1 = file.readStringUntil('\n');
-      if (line1.startsWith("ssid = ")) {
-        line += "<tr>";
-        line += " <td>";
-        line += line1.substring(7);
-        // line += " <td>Maria Anders</td>";
-        //ssid[s] = line.substring(7);
-        //  Serial.println(ssid[sizeof(ssid)]);
-        //Serial.println(ssid[s]);
-        // s++;
-        line += " </td>";
-      } else if (line1.startsWith("password = ")) {
-        // password[p] = line.substring(11);
-        //Serial.println(password[p]);
-        // p++;
-        line += " <td>";
-        line += line1.substring(11);
-        line += " </td>";
-        line += " </tr>";
+
+  server.send(200, "text/html", form );
+
+
+}
+void wifi() {
+  int n = WiFi.scanNetworks();
+  String wifilist = "";
+  Serial.println("scan done");
+  if (n == 0)
+    Serial.println("no networks found");
+  else
+  {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i)
+    {
+      wifilist += "<div><a href='#p' onclick='c(this)'>";
+      wifilist += WiFi.SSID(i) ;
+      wifilist += "</a>&nbsp;" ;
+
+      if (WiFi.encryptionType(i) == ENC_TYPE_NONE) {
+        wifilist += "<span class='q '>";
+
+      } else {
+        wifilist += "<span class='q l'>";
+
       }
-      round_read++;
-      Serial.println(round_read);
+      int quality =(2*(WiFi.RSSI(i)+100));
+      if(quality >100){
+        quality = 100;
+      }
+      wifilist += String(quality) ;
+      wifilist += "%</span></div>";
+
     }
-
-    file.close();
   }
-  if (round_read < 8) {
-    for (int i = round_read / 2; i < 4; i++) {
-      Serial.println("loooopppppppppppppp");
-      line += " </tr>";
-      line += " <td>";
-      line += " </td>";
-      line += " <td>";
-      line += " </td>";
-      line += " </tr>";
-    }
+  server.send(200, "text/html", wifi_headform + wifilist + wifi_tailform);
+}
+void pushover_setting() {
+  String pushover_form =  wifi_tailform;
+  pushover_form.replace("'s'", "apikey");
+  pushover_form.replace("'p'", "userkey");
+  pushover_form.replace("type='password'", "");
+  pushover_form.replace("'SSID'", "APIkey");
+  pushover_form.replace("'password'", "Userkey");
+  pushover_form.replace("<div class='c'><a href='/wifi'>Scan</a></div>", "");
+  server.send(200, "text/html", wifi_headform + pushover_form);
+}
+void reset() {
+  server.send(200, "text/html", wifi_headform + "smarthelper will restart please wait for a while . . .");
+  ESP.restart();
+}
+void q_buffer(String a, String b) {
+
+  for (int i = 4 - 1; i > 0 ; i--) {
+    Serial.println(i);
+    ssid_list[i] = ssid_list[i - 1];
+    password_list[i] = password_list[i - 1];
 
   }
-  line += "</table>";
-  line += " </center>";
-  line += "<form action='edit'>";
-  line += "<button name='edit' type='submit' value='edit'>EDIT</button>";
-  server.send(200, "text/html", form + line);
-
-
+  ssid_list[0] = a ;
+  password_list[0] = b ;
 }
 void handle_msg()
 {
@@ -174,73 +180,59 @@ void handle_msg()
   String ssid_msg ;
   String password_msg ;
 
-
+  for (int i = 0; i < server.args(); i++) {
+    if (server.argName(i) == "s") {
+      ssid_msg = server.arg(i);
+      ssid_msg.trim();
+      Serial.println(ssid_msg);
+      Serial.println(ssid_msg.length());
+      // file2.println("ssid = " + ssid_msg);
+      //ssid[s] = ssid_msg;
+      //s++;
+    } else if (server.argName(i) == "p") {
+      password_msg = server.arg(i);
+      password_msg.trim();
+      // file2.println("password = " + password_msg);
+      // password[p] = password_msg;
+      // p++;
+      Serial.println(password_msg);
+       Serial.println(password_msg.length());
+      q_buffer(ssid_msg, password_msg);
+    } else if (server.argName(i) == "apikey") {
+      Api_key = server.arg(i);
+      Api_key.trim();
+      Serial.println(Api_key);
+      Serial.println(Api_key.length());
+      //file2.println("apikey = " + password_msg);
+      // password[p] = password_msg;
+      // p++;
+    } else if (server.argName(i) == "userkey") {
+      User_key = server.arg(i);
+      User_key.trim();
+      Serial.println(User_key);
+       Serial.println(User_key.length());
+      //file2.println("userkey = " + password_msg);
+      // password[p] = password_msg;
+      // p++;
+    }
+  }
   Serial.println("from web");
   File file2 = SPIFFS.open("/test.txt", "w");
   if (!file2) {
     Serial.println("file open failed!");
   } else {
     Serial.println("file open success:)");
-
-    for (int i = 0; i < server.args(); i++) {
-      if (server.argName(i) == "ssid") {
-        ssid_msg = server.arg(i);
-        ssid_msg.trim();
-        file2.println("ssid = " + ssid_msg);
-        //ssid[s] = ssid_msg;
-        //s++;
-      } else if (server.argName(i) == "password") {
-        password_msg = server.arg(i);
-        password_msg.trim();
-        file2.println("password = " + password_msg);
-        // password[p] = password_msg;
-        // p++;
-      }
+    for (int i = 0; i < 4; i++) {
+      file2.println("ssid = " + ssid_list[i]);
+      file2.println("password = " + password_list[i]);
     }
-    delay(500);
-
+    file2.println("api key = " + Api_key);
+    file2.println("user key = " + User_key);
     file2.close();
   }
-  delay(2000);
-  web_page() ;
-}
 
-void pepare_wifilist() {
-  int s = 0;
-  int p = 0;
-  File file = SPIFFS.open("/test.txt", "r");
-  if (!file) {
-    Serial.println("file open failed!");
-  } else {
-    Serial.println("file open success:)");
-
-    while (file.available()) {
-      //Lets read line by line from the file
-      String line = file.readStringUntil('\n');
-      if (line.startsWith("ssid = ")) {
-        ssid_list[s] = line.substring(7);
-        //  Serial.println(ssid_list[sizeof(ssid_list)]);
-
-        Serial.println(ssid_list[s]);
-        s++;
-      } else if (line.startsWith("password = ")) {
-        password_list[p] = line.substring(11);
-        Serial.println(password_list[p]);
-        p++;
-      }
-
-    }
-    if (s == 3) {
-      s = 0;
-      p = 0;
-    }
-    for (int j = 0 ; j < 4 ; j++) {
-      Serial.println(j);
-      Serial.println(ssid_list[j]);
-      Serial.println(password_list[j]);
-
-    }
-  } file.close();
+  server.send(200, "text/html", back_to_main);
+  //web_page() ;
 }
 
 String current_ssid     = "your-ssid";
@@ -261,42 +253,6 @@ void setup_wifi() {
     }*/
   //     WiFi.config(charToIPAddress(ip), charToIPAddress(gateway), mask);
   Serial.print( WiFi.localIP());
-  File file = SPIFFS.open("/test.txt", "r");
-  if (!file) {
-    Serial.println("file open failed!");
-  } else {
-    Serial.println("file open success:)");
-
-    while (file.available()) {
-      //Lets read line by line from the file
-      String line = file.readStringUntil('\n');
-      if (line.startsWith("ssid = ")) {
-        ssid_list[s] = line.substring(7);
-        current_ssid = ssid_list[s];
-        //  Serial.println(ssid[sizeof(ssid)]);
-        char ssid[current_ssid.length()];
-        current_ssid.toCharArray(ssid, current_ssid.length());
-        Serial.println( current_ssid.length());
-        Serial.println(current_ssid);
-        s++;
-      } else if (line.startsWith("password = ")) {
-        password_list[p] = line.substring(11);
-        current_password = password_list[p];
-        char password1[current_password.length()];
-        current_password.toCharArray(password1, current_password.length());
-        Serial.println( current_password.length());
-        Serial.println(current_password);
-
-        p++;
-      }
-
-    }
-    if (s == 3) {
-      s = 0;
-      p = 0;
-    }
-  }
-  file.close();
   for (int j = 0 ; j < 4 ; j++) {
     if (WiFi.status() != WL_CONNECTED) {
       current_ssid = ssid_list[j];
@@ -331,74 +287,10 @@ void setup_wifi() {
 
 }
 
-void edit_default()
-{
-  String line_edit;
-  int round_read = 0;
-  File file = SPIFFS.open("/test.txt", "r");
-  if (!file) {
-    Serial.println("file open failed!");
-  } else {
-    Serial.println("file open success: web server)");
-
-    while (file.available()) {
-      //Lets read line by line from the file
-      String line2 = file.readStringUntil('\n');
-      if (line2.startsWith("ssid = ")) {
-        line_edit += "<tr>";
-        line_edit += " <td><input type='text' name='ssid' value='";
-        line_edit += line2.substring(7);
-        line_edit += "' autofocus></td>";
-
-
-        // line += " <td>Maria Anders</td>";
-        //ssid[s] = line.substring(7);
-        //  Serial.println(ssid[sizeof(ssid)]);
-        //Serial.println(ssid[s]);
-        // s++;
-        // line_edit += " </td>";
-      } else if (line2.startsWith("password = ")) {
-        // password[p] = line.substring(11);
-        //Serial.println(password[p]);
-        // p++;
-        line_edit += " <td><input type='text' name='password' value='";
-        line_edit += line2.substring(11);
-        line_edit += "' autofocus>";
-        line_edit += " </td>";
-        line_edit += " </tr>";
-        line_edit += " </tr>";
-
-
-      }
-
-      round_read++;
-    }
-
-  }
-  if (round_read < 8) {
-    for (int i = round_read / 2; i < 4; i++) {
-      line_edit += "<tr>";
-      line_edit += " <td><input type='text' name='ssid' value='";
-
-      line_edit += "' autofocus></td>";
-      line_edit += " <td><input type='text' name='password' value='";
-
-      line_edit += "' autofocus>";
-      line_edit += " </td>";
-      line_edit += " </tr>";
-      line_edit += " </tr>";
-    }
-  }
-  line_edit += "</table>";
-  line_edit += "<input type='submit' value='Submit'></form>";
-  line_edit += "</fieldset>";
-  server.send(200, "text/html", Edit_form + line_edit);
-  file.close();
-}
-
 
 void prepareFile() {
-
+  int s = 0;
+  int p = 0;
   Serial.println("Prepare file system");
   SPIFFS.begin();
 
@@ -414,33 +306,74 @@ void prepareFile() {
     f.close();
   } else {
     Serial.println("file open success:)");
-
+    //  Serial.write(file.read());
     while (file.available()) {
-      Serial.write(file.read());
+      //  Serial.write(file.read());
+      //Lets read line by line from the file
+      Serial.println("====== file have data =========");
+      String line = file.readStringUntil('\n');
+      if (line.startsWith("ssid = ")) {
+        ssid_list[s] = line.substring(7);
+        current_ssid = ssid_list[s];
+        current_ssid.trim();
+        //  Serial.println(ssid[sizeof(ssid)]);
+        char ssid[current_ssid.length()];
+        current_ssid.toCharArray(ssid, current_ssid.length());
+        Serial.println( current_ssid.length());
+        Serial.println(current_ssid);
+        s++;
+      } else if (line.startsWith("password = ")) {
+        password_list[p] = line.substring(11);
+        current_password = password_list[p];
+        current_password.trim();
+        char password1[current_password.length()];
+        current_password.toCharArray(password1, current_password.length());
+        Serial.println( current_password.length());
+        Serial.println(current_password);
+
+        p++;
+      } else if (line.startsWith("api key = ")) {
+        Api_key = line.substring(10);
+        Api_key.trim();
+          Serial.println(Api_key.length());
+        Serial.println(Api_key);
+
+      } else if (line.startsWith("user key = ")) {
+        User_key = line.substring(11);
+        User_key.trim();
+        Serial.println(User_key.length());
+        Serial.println(User_key);
+
+      }
+
     }
-
-    file.close();
+    if (s == 3) {
+      s = 0;
+      p = 0;
+    }
   }
-
+  file.close();
 }
+
 void setup_apmode() {
   WiFi.disconnect();
   delay(1000);
-  Serial.println("Starting in AP mode");
+  //  Serial.println("Starting in AP mode");
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid, password);
   delay(1000);
   IPAddress apip = WiFi.softAPIP();
-  Serial.print("visit: \n");
-  Serial.println(apip);
+  // Serial.print("visit: \n");
+  //Serial.println(apip);
 
   // Set up the endpoints for HTTP server,  Endpoints can be written as inline functions:
   server.on("/", []()
   { web_page() ;
   } );
-
-  server.on("/msg", handle_msg);                          // And as regular external functions:
-  server.on("/edit", edit_default);
+  server.on("/r", reset);
+  server.on("/wifisave", handle_msg);                          // And as regular external functions:
+  server.on("/wifi", wifi);                          // And as regular external functions:
+  server.on("/pushover", pushover_setting);                          // And as regular external functions:
   server.begin();                                         // Start the server
 
   /*
@@ -453,8 +386,9 @@ void setup_apmode() {
 }
 
 
+
 void send_notify() {
-  Pushover po = Pushover("a7bregkd9yfi3zxsy3rzjfmrepcpcu","g1ouije5mpjxgt6ba5r5f2ww3vh3wp"); //a5730069b  "aniht4f1tap1bjfm3wcn1omu342kmq","urd352cyho726n3d9kvs5qdbgknk6r" //api key //user key
+  Pushover po = Pushover("a7bregkd9yfi3zxsy3rzjfmrepcpcu","g1ouije5mpjxgt6ba5r5f2ww3vh3wp"); //a5730069b  "a7bregkd9yfi3zxsy3rzjfmrepcpcu","g1ouije5mpjxgt6ba5r5f2ww3vh3wp" //api key //user key
   //po.setDevice("chrome");
   po.setMessage("WARNING!!!! FALL DETECTION");
   po.setSound("siren");
