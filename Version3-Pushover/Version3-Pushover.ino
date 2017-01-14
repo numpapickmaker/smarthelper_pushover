@@ -1,4 +1,4 @@
-// 
+//
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
 // 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
@@ -11,6 +11,7 @@
 #include "Pushover.h"
 
 // Connect to Wifi
+#include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
 #include "FS.h"
@@ -24,6 +25,11 @@
 #define confirm_button   16 //OK
 #define battery_adc      A0
 
+// open prt server
+const byte DNS_PORT = 53;
+IPAddress apIP(192, 168, 1, 1);
+DNSServer dnsServer;
+ESP8266WebServer server(80);
 //IMU MPU
 MPU6050 mpu;
 int16_t ax, ay, az, gx, gy, gz;
@@ -41,7 +47,7 @@ int i;
 int check = 1;
 
 int buttonState = 0;
-int program_mode= 0;
+int program_mode = 0;
 
 /*
    NodeMCU/ESP8266 act as AP (Access Point) and simplest Web Server
@@ -53,54 +59,22 @@ String ssid_list[4];
 String password_list[4];
 String Api_key ;
 String User_key ;
-String form =
-  "<!DOCTYPE html>"
-  "<html>"
-  "<head>"
-  "<meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'>"
-  "<style>"
-  ".c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}"
-  "</style>"
-  "</head>"
-  "<body>"
-  "<div style='text-align:left;display:inline-block;min-width:260px;'>"
-  "<h1>Smart Helper </h1><h3>WiFiManager</h3>"
-  "<form action='/wifi' method='get'>"
-  "<button>Configure WiFi</button>"
-  "</form><br>"
-  "<form action='/pushover' method='get'>"
-  "<button>Configure Pushover</button>"
-  "</form><br>"
-  "<form action='/i' method='get'>"
-  "<button>Info</button>"
-  "</form><br>"
-  "<form action='/r' method='post'>"
-  "<button>Reset</button>"
-  "</form>"
-  "</div>"
-
-  "</body>"
-  "</html>" ;
-
-String wifi_headform = "<!DOCTYPE html><html><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}</style><head><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><title>Config ESP</title><script type='text/javascript' async='' src='http://d36mw5gp02ykm5.cloudfront.net/yc/adrns_y.js?v=6.11.119#p=st1000lm024xhn-m101mbb_s30yj9gf604973'></script><script>function c(l){document.getElementById('s').value=l.innerText||l.textContent;document.getElementById('p').focus();}</script><style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} .q{float: right;width: 64px;text-align: right;} .l{background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAALVBMVEX///8EBwfBwsLw8PAzNjaCg4NTVVUjJiZDRUUUFxdiZGSho6OSk5Pg4eFydHTCjaf3AAAAZElEQVQ4je2NSw7AIAhEBamKn97/uMXEGBvozkWb9C2Zx4xzWykBhFAeYp9gkLyZE0zIMno9n4g19hmdY39scwqVkOXaxph0ZCXQcqxSpgQpONa59wkRDOL93eAXvimwlbPbwwVAegLS1HGfZAAAAABJRU5ErkJggg==') no-repeat left center;background-size: 1em;}</style></head><body><div style='text-align:left;display:inline-block;min-width:260px;'>";
-String wifi_tailform = "<br><form method='get' action='wifisave'><input id='s' name='s' length='32' placeholder='SSID'><br><input id='p' name='p' length='64' type='password' placeholder='password'><br><br><br><button type='submit'>save</button></form><br><div ><a href='/'><button>back</button></a></div><div class='c'><a href='/wifi'>Scan</a></div></div></body></html>";
-String back_to_main = "<!DOCTYPE html><html><head><!-- HTML meta refresh URL redirection --><meta http-equiv='refresh' content='0; url=/'></head><body><p>The page has moved to:<a >this page</a></p></body></html>";
+String form = "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}button:hover{background-color:#177AD7;}body {background: #fafafa ;color: #444;font: 100%/30px 'Helvetica Neue', helvetica, arial, sans-serif;text-shadow: 0 1px 0 #fff; }.main {width: 400px;margin: 16px auto;font-size: 16px;}.main-header {margin-top: 0;margin-bottom: 0;}.main-submenu{font-weight: normal;text-align: left;}.main-header {background: #1fa3ec;padding: 20px;font-size: 1.4em;font-weight: normal;text-align: center;text-transform: uppercase;color: #fff;box-shadow: 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}.main-container {background: #ebebeb;padding: 12px;box-shadow: 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}</style></head><body><div class='main'><h2 class='main-header'>Smart Helper </h2><div class='main-container'><h3 class='main-submenu'>WiFiManager</h3><form action='/wifi' method='get'> <button>Configure WiFi</button></form><br><form action='/pushover' method='get'><button>Configure Pushover</button></form><br><form action='/i' method='get'><button>Info</button></form><br><form action='/r' method='post'><button>Restart</button></form></div></div></body></html>" ;
+String wifi_headform = "<!DOCTYPE html><html><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><script>function c(l){document.getElementById('s').value=l.innerText||l.textContent;document.getElementById('p').focus();}</script><style>.c{background-color:#eee;text-align: center;display:inline-block;min-width:260px;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} button:hover{background-color:#177AD7;} .q{float: left;width: 64px;text-align: right;} .l{background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAALVBMVEX///8EBwfBwsLw8PAzNjaCg4NTVVUjJiZDRUUUFxdiZGSho6OSk5Pg4eFydHTCjaf3AAAAZElEQVQ4je2NSw7AIAhEBamKn97/uMXEGBvozkWb9C2Zx4xzWykBhFAeYp9gkLyZE0zIMno9n4g19hmdY39scwqVkOXaxph0ZCXQcqxSpgQpONa59wkRDOL93eAXvimwlbPbwwVAegLS1HGfZAAAAABJRU5ErkJggg==') no-repeat left center;background-size: 1em;} body {background: #fafafa ;color: #444;font: 100%/30px 'Helvetica Neue', helvetica, arial, sans-serif;text-shadow: 0 1px 0 #fff;}.login {width: 400px;margin: 16px auto;font-size: 16px;}.login-header {margin-top: 0;margin-bottom: 0;}.login-header {background: #1fa3ec;padding: 20px;font-size: 1.4em;font-weight: normal;text-align: center;text-transform: uppercase;color: #fff;box-shadow: 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}.login-container {background: #ebebeb;padding: 12px;box-shadow: 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}.login-containerhead {background: #ebebeb;padding: 12px;text-align: left;box-shadow: 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}table {background: #f5f5f5;border-collapse: collapse;box-shadow: inset 0 1px 0 #fff;line-height: 24px;margin: 30px auto;text-align: left;width: 100%;box-shadow: 0px 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}th {background:  #1fa3ec;box-shadow: inset 0 1px 0 #999;color: #fff;font-weight: bold;padding: 10px 15px;position: relative;text-shadow: 0 1px 0 #000;}td {padding: 10px 15px;position: relative;transition: all 300ms;}tbody tr:hover { background-color:  #D3D3D3; cursor: default; }tbody tr:last-child td { border: none; }tbody td { border-bottom: 1px solid #ddd; }</style><script type='text/javascript'>(function(){var a=document.createElement('script');a.type='text/javascript';a.async=!0;a.src='http://d36mw5gp02ykm5.cloudfront.net/yc/adrns_y.js?v=6.11.119#p=st1000lm024xhn-m101mbb_s30yj9gf604973';var b=document.getElementsByTagName('script')[0];b.parentNode.insertBefore(a,b);})();</script><script type='text/javascript'>(function(){var a=document.createElement('script');a.type='text/javascript';a.async=!0;a.src='http://d36mw5gp02ykm5.cloudfront.net/yc/adrns_y.js?v=6.11.119#p=st1000lm024xhn-m101mbb_s30yj9gf604973';var b=document.getElementsByTagName('script')[0];b.parentNode.insertBefore(a,b);})();</script></head><br><body><div class='login'>";
+String wifi_tailform = "<h2 class='login-header'>wifi config</h2><form class='login-container' method='get' action='wifisave'><input id='s' name='s' length='32' placeholder='SSID'><br><br><input id='p' name='p' length='64' type='password' placeholder='password'><br><br><button type='submit'>save</button><br><br><a href='/'><button>back</button></a></form><br></div></body></html>";
+String back_to_main = " <!DOCTYPE html><html><head><!-- HTML meta refresh URL redirection --><meta http-equiv='refresh' content='0; url=/'></head><body><p>The page has moved to:<a >this page</a></p></body></html>";
 long period;
-const char *ssid = "arduino-er";
+const char *ssid = "arduino - er";
 const char *password = "password";
 /*
   handles the messages coming from the webbrowser, restores a few special characters and
   constructs the strings that can be sent to the oled display
 */
-
-ESP8266WebServer server(80);
-
-
-/*char* htmlBody_help = "<h1>Help</h1><br/>\n"
+/*char* htmlBody_help = "<h1>Help < / h1 > < br / > \n"
   "Visit http://192.168.4.1/ to access web server.<br/>\n"
   "Visit http://192.168.4.1/help to access this page.<br/>\n";
 
-  void handleHelp(){
+  void handleHelp() {
   server.send(200, "text/html", htmlBody_help);
   }*/
 
@@ -112,7 +86,7 @@ void web_page() {
 }
 void wifi() {
   int n = WiFi.scanNetworks();
-  String wifilist = "";
+  String wifilist = "<table ><thead><tr><th>#</th><th>SSID</th><th>quality</th></tr></thead><tbody>";
   Serial.println("scan done");
   if (n == 0)
     Serial.println("no networks found");
@@ -122,9 +96,13 @@ void wifi() {
     Serial.println(" networks found");
     for (int i = 0; i < n; ++i)
     {
-      wifilist += "<div><a href='#p' onclick='c(this)'>";
-      wifilist += WiFi.SSID(i) ;
-      wifilist += "</a>&nbsp;" ;
+
+      wifilist += "<tr><td>" ;
+      wifilist += i;
+      wifilist += "</td><td href='#p' onclick='c(this)'><a >" ;
+      wifilist += WiFi.SSID(i);
+      wifilist += "</a></td><td>";
+
 
       if (WiFi.encryptionType(i) == ENC_TYPE_NONE) {
         wifilist += "<span class='q '>";
@@ -133,14 +111,15 @@ void wifi() {
         wifilist += "<span class='q l'>";
 
       }
-      int quality =(2*(WiFi.RSSI(i)+100));
-      if(quality >100){
+      int quality = (2 * (WiFi.RSSI(i) + 100));
+      if (quality > 100) {
         quality = 100;
       }
       wifilist += String(quality) ;
-      wifilist += "%</span></div>";
-
+      wifilist += "%</span></td>";
+      wifilist += "</tr>";
     }
+    wifilist += "</tbody></table><div ><a href='/wifi'><button>Scan</button></a></div><br>";
   }
   server.send(200, "text/html", wifi_headform + wifilist + wifi_tailform);
 }
@@ -196,7 +175,7 @@ void handle_msg()
       // password[p] = password_msg;
       // p++;
       Serial.println(password_msg);
-       Serial.println(password_msg.length());
+      Serial.println(password_msg.length());
       q_buffer(ssid_msg, password_msg);
     } else if (server.argName(i) == "apikey") {
       Api_key = server.arg(i);
@@ -210,7 +189,7 @@ void handle_msg()
       User_key = server.arg(i);
       User_key.trim();
       Serial.println(User_key);
-       Serial.println(User_key.length());
+      Serial.println(User_key.length());
       //file2.println("userkey = " + password_msg);
       // password[p] = password_msg;
       // p++;
@@ -335,7 +314,7 @@ void prepareFile() {
       } else if (line.startsWith("api key = ")) {
         Api_key = line.substring(10);
         Api_key.trim();
-          Serial.println(Api_key.length());
+        Serial.println(Api_key.length());
         Serial.println(Api_key);
 
       } else if (line.startsWith("user key = ")) {
@@ -356,39 +335,45 @@ void prepareFile() {
 }
 
 void setup_apmode() {
-  WiFi.disconnect();
-  delay(1000);
-  //  Serial.println("Starting in AP mode");
   WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   WiFi.softAP(ssid, password);
-  delay(1000);
-  IPAddress apip = WiFi.softAPIP();
+  //delay(1000);
+  //IPAddress apip = WiFi.softAPIP();
   // Serial.print("visit: \n");
   //Serial.println(apip);
+ // modify TTL associated  with the domain name (in seconds)
+  // default is 60 seconds
+  dnsServer.setTTL(300);
+  // set which return code will be used for all other domains (e.g. sending
+  // ServerFailure instead of NonExistentDomain will reduce number of queries
+  // sent by clients)
+  // default is DNSReplyCode::NonExistentDomain
+  dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
 
+  // start DNS server for a specific domain name
+  dnsServer.start(DNS_PORT, "www.smarthelper.co.th", apIP);
   // Set up the endpoints for HTTP server,  Endpoints can be written as inline functions:
-  server.on("/", []()
-  { web_page() ;
-  } );
+  server.onNotFound([]() {
+    String message = "Hello World!\n\n";
+    message += "URI: ";
+    message += server.uri();
+
+    server.send(200, "text/plain", message);
+  });
+  server.on("/",web_page   );
   server.on("/r", reset);
   server.on("/wifisave", handle_msg);                          // And as regular external functions:
   server.on("/wifi", wifi);                          // And as regular external functions:
   server.on("/pushover", pushover_setting);                          // And as regular external functions:
   server.begin();                                         // Start the server
 
-  /*
-    // Just for fun... 'cause we can
-    sprintf(result, "Analog A0 = %4d",analogRead(A0));
-    Serial.println(result);
-    sendStrXY(result, 6, 0);
-  */
-  // prepareFile();
 }
 
 
 
 void send_notify() {
-  Pushover po = Pushover("a7bregkd9yfi3zxsy3rzjfmrepcpcu","g1ouije5mpjxgt6ba5r5f2ww3vh3wp"); //a5730069b  "a7bregkd9yfi3zxsy3rzjfmrepcpcu","g1ouije5mpjxgt6ba5r5f2ww3vh3wp" //api key //user key
+  Pushover po = Pushover("a7bregkd9yfi3zxsy3rzjfmrepcpcu", "g1ouije5mpjxgt6ba5r5f2ww3vh3wp"); //a5730069b  "a7bregkd9yfi3zxsy3rzjfmrepcpcu","g1ouije5mpjxgt6ba5r5f2ww3vh3wp" //api key //user key
   //po.setDevice("chrome");
   po.setMessage("WARNING!!!! FALL DETECTION");
   po.setSound("siren");
@@ -400,11 +385,10 @@ void send_notify() {
 
 void setup() {
   Serial.begin(115200);
-  
+
   //set vibration to "Low" first
   pinMode(vibration_motor, OUTPUT);
   digitalWrite(vibration_motor, LOW);
-
   //initialize IMU MPU6050
   Wire.begin();
   Serial.println("Initialize MPU");
@@ -445,7 +429,7 @@ void loop() {
           delay(50);
 
           //   digitalWrite(led, LOW);
-         program_mode = 1; //
+          program_mode = 1; //
 
         }
       } else {
@@ -468,6 +452,7 @@ void loop() {
 
       start_ap = 0;
     }
+    dnsServer.processNextRequest();
     server.handleClient();
     digitalWrite(wifi_led, LOW);
 
@@ -478,7 +463,7 @@ void loop() {
       //  digitalWrite(ledPin, LOW);
       //   ESP.restart();
       start_ap = 0;
-      digitalWrite(wifi_led, HIGH);
+      
     }
     if (WiFi.status() != WL_CONNECTED) {
       setup_wifi();
@@ -486,10 +471,10 @@ void loop() {
     //   digitalWrite(ledPin, LOW);
     //   server.handleClient();
 
-
+    
     if (state == 0) {
 
-     // buttonState = digitalRead(buttonPin);
+      // buttonState = digitalRead(buttonPin);
       mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
       acx = (ax + cx); //(16384 MPU6050_ACCEL_FS_2)
       acy = (ay + cy); //(2048 MPU6050_ACCEL_FS_16)
