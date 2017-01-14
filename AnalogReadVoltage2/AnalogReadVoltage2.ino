@@ -28,37 +28,37 @@
 */
 // select the input pin for the potentiometer
 // select the pin for the LED
-unsigned long timer, preTime, preTime2 , timeOut;
+unsigned long timerBat, preTimeBat, preTime2Bat , timeOutBat;
 float sensorValue = 0;  // variable to store the value coming from the sensor
-boolean toggleLED,toggle;
-void toggle_LED (int toggle_time , int pin){
-   if(toggleLED == true){
+boolean toggleLEDBat,toggleBat;
+void toggle_battery_led (int toggle_time , int pin){
+   if(toggleLEDBat == true){
    //Serial.println("toggleLED true");
-   timer = millis();
-   if(timer - preTime2 > toggle_time){
-    toggle = !toggle;
-    Serial.println(toggle);
-    digitalWrite(pin,toggle);
-    preTime2 = timer;
+   timerBat = millis();
+   if(timerBat - preTime2Bat > toggle_time){
+    toggleBat = !toggleBat;
+    Serial.println(toggleBat);
+    digitalWrite(pin,toggleBat);
+    preTime2Bat = timerBat;
    }
    }
 }
 
-void read_battery(){
-  timer = millis();
-  if (timer - preTime > 5000) {
+void read_battery_milsec(unsigned long t){
+  timerBat = millis();
+  if (timerBat - preTimeBat > t) {
     sensorValue = analogRead(A0);
-    if (sensorValue < 837 ) {
+    if (sensorValue < 855 ) {//น้อยกว่า3.5V จะเตือน//837
       Serial.print("case1 : ");
       Serial.println(sensorValue);//*3.3/1024
-      toggleLED = true;
-      preTime = timer;
+      toggleLEDBat = true;
+      preTimeBat = timerBat;
       //int x = (sensorValue*4.3)/1024;
-    } else {
+    } else {//
       Serial.print("case2 : ");
       Serial.println(sensorValue);//*3.3/1024
-      toggleLED = false;
-      preTime = timer;
+      toggleLEDBat = false;
+      preTimeBat = timerBat;
     }
   }
 }
@@ -70,10 +70,10 @@ void setup() {
 }
 
 void loop() {
-  
+  Serial.println("test");
   // read the value from the sensor:
-  read_battery();
-  toggle_LED(500,13);
+  read_battery_milsec(5000);
+  toggle_battery_led(1000,13);
   
 
 }
