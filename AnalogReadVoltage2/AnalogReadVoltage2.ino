@@ -1,31 +1,4 @@
-/*
-  Analog Input
-  Demonstr  turning on and off a light emitting diode(LED)  connected to digital pin 13.
-  ates analog input by reading an analog sensor on analog pin 0 and
-  The amount of time the LED will be on and off depends on
-  the value obtained by analogRead().
 
-  The circuit:
-   Potentiometer attached to analog input 0
-   center pin of the potentiometer to the analog pin
-   one side pin (either one) to ground
-   the other side pin to +5V
-   LED anode (long leg) attached to digital output 13
-   LED cathode (short leg) attached to ground
-
-   Note: because most Arduinos have a built-in LED attached
-  to pin 13 on the board, the LED is optional.
-
-
-  Created by David Cuartielles
-  modified 30 Aug 2011
-  By Tom Igoe
-
-  This example code is in the public domain.
-
-  http://www.arduino.cc/en/Tutorial/AnalogInput
-
-*/
 // select the input pin for the potentiometer
 // select the pin for the LED
 unsigned long timerBat, preTimeBat, preTime2Bat , timeOutBat;
