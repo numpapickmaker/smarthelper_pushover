@@ -48,7 +48,7 @@ void read_battery_milsec(unsigned long t){
   timerBat = millis();
   if (timerBat - preTimeBat > t) {
     sensorValue = analogRead(A0);
-    if (sensorValue < 855 ) {//น้อยกว่า3.5V จะเตือน//837
+    if (sensorValue < 837 ) {//น้อยกว่า3.5V จะเตือน//837
       Serial.print("case1 : ");
       Serial.println(sensorValue);//*3.3/1024
       toggleLEDBat = true;
@@ -66,14 +66,14 @@ void setup() {
   // declare the ledPin as an OUTPUT:
   Serial.begin(9600);
   pinMode(A0, INPUT);
-  pinMode(13, OUTPUT);
+  pinMode(12, OUTPUT);
 }
 
 void loop() {
   Serial.println("test");
   // read the value from the sensor:
-  read_battery_milsec(5000);
-  toggle_battery_led(1000,13);
+  read_battery_milsec(5000);//อ่านทุกๆ nวิ
+  toggle_battery_led(1000,12);// led on pin12 battery
   
 
 }
