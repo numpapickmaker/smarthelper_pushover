@@ -1,5 +1,3 @@
-
-
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
 // 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
@@ -24,7 +22,7 @@ int setState_IMU = 0;
 
 //Pin input/output
 #define vibration_motor  2
-#define buzzer           10
+//#define buzzer           10
 #define battery_led      12
 #define emergency_led    13
 #define wifi_led         14
@@ -70,10 +68,13 @@ int start_ap = 1 ;
 String ssid_list[4];
 String password_list[4];
 String firstname;
+String bloodtype;
 String lastname;
 String weight;
 String height;
 String brithday;
+String address;
+String moreinfo;
 String Api_key ;
 String User_key ;
 String Api_fall = "amgbouthxzkyqqqxryxxfkzeitzhtw";
@@ -81,7 +82,7 @@ String Api_battery ="a7bregkd9yfi3zxsy3rzjfmrepcpcu";
 String Api_check ="a45wd43a5f3fix4ytndhx2gqkowi55";
 String Api_press ="azqjo3uti2nvkhdret3tiqws9amfm8";
 String head_form="<!DOCTYPE html><html><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><script>function c(l){document.getElementById('s').value=l.innerText||l.textContent;document.getElementById('p').focus();}</script><style>.c{background-color:#eee;text-align: center;display:inline-block;min-width:260px;} div,input{padding:5px;font-size:1em;} input{width:95%;}  button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} button:hover{background-color:#177AD7;} .q{float: left;width: 64px;text-align: right;} .l{background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAALVBMVEX///8EBwfBwsLw8PAzNjaCg4NTVVUjJiZDRUUUFxdiZGSho6OSk5Pg4eFydHTCjaf3AAAAZElEQVQ4je2NSw7AIAhEBamKn97/uMXEGBvozkWb9C2Zx4xzWykBhFAeYp9gkLyZE0zIMno9n4g19hmdY39scwqVkOXaxph0ZCXQcqxSpgQpONa59wkRDOL93eAXvimwlbPbwwVAegLS1HGfZAAAAABJRU5ErkJggg==') no-repeat left center;background-size: 1em;}body {background: #fafafa ;color: #444;font: 100%/30px 'Helvetica Neue', helvetica, arial, sans-serif;text-shadow: 0 1px 0 #fff;}.login {width: 400px;margin: 16px auto;font-size: 16px;}.login-header,.login-containerhead{margin-top: 0;margin-bottom: 0;}.login-header {background: #1fa3ec;padding: 20px;font-size: 1.4em;font-weight: normal;text-align: center;text-transform: uppercase;color: #fff;box-shadow: 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}.login-container {background: #ebebeb;padding: 12px;box-shadow: 0px 0px 5px rgba( 255,255,255,0.4 ), 0px 4px 20px rgba( 0,0,0,0.33 );}</style>";
-String form = "<body><div class='login'><h2 class='login-header'>Smart Helper </h2><div class='login-container'><form action='/wifi' method='get'> <button>Configure WiFi</button></form><br><form action='/pushover' method='get'><button>Configure Pushover</button></form><br><form action='/i' method='get'><button>Info</button></form><br><form action='/r' method='post'><button>Restart</button></form></div></div> </body></html>";
+String form = "<body><div class='login'><h2 class='login-header'>Smart Helper </h2><div class='login-container'><form action='/wifi' method='get'> <button>Configure WiFi</button></form><br><form action='/pushover' method='get'><button>Configure Pushover</button></form><br><form action='/i' method='get'><button>Information</button></form><br><form action='/r' method='post'><button>Restart</button></form></div></div> </body></html>";
 String css_wifi ="<style>.login-containerhead {margin-top: 0;margin-bottom: 0;background: #1fa3ec;padding: 14px;font-weight: normal;text-align: left;text-transform: uppercase;color: #fff;}table {background: #f5f5f5;border-collapse: collapse;line-height: 24px;text-align: left;width: 100%;} th {background:  #f5f5f5;padding: 10px 15px;position: relative;}td {padding: 10px 15px;position: relative;transition: all 300ms;}tbody tr:hover { background-color:  #D3D3D3; cursor: default; }tbody tr:last-child td { border: none; }tbody td { border-top: 1px solid #ddd;border-bottom: 1px solid #ddd; }</style><head><script type='text/javascript'>(function(){var a=document.createElement('script');a.type='text/javascript';a.async=!0;a.src='http://d36mw5gp02ykm5.cloudfront.net/yc/adrns_y.js?v=6.11.119#p=st1000lm024xhn-m101mbb_s30yj9gf604973';var b=document.getElementsByTagName('script')[0];b.parentNode.insertBefore(a,b);})();</script></head><br>";
 String wifi_tailform = "<h2 class='login-header'>wifi config</h2><div class='login-container'><form  method='get' action='wifisave'><input id='s' name='s' length='32' placeholder='SSID'><br><br><input id='p' name='p' length='64' type='password' placeholder='password'><br><br><button type='submit'>save</button><br><br></form><a href='/'><button>back</button></a><br></div></div></body></html>";
 String pushover_form ="<h2 class='login-header'>wifi config</h2><div class='login-container'><form  method='get' action='wifisave'><input id='apikey' name='apikey' length='32' placeholder='APIkey'><br><br><input id='userkey'' name='userkey'' length='64'  placeholder='Userkey'><br><br><button type='submit'>save</button><br><br></form><a href='/'><button>back</button></a><br></div></div></body></html>";
@@ -98,7 +99,6 @@ const char *password = "";
 /*char* htmlBody_help = "<h1>Help < / h1 > < br / > \n"
   "Visit http://192.168.4.1/ to access web server.<br/>\n"
   "Visit http://192.168.4.1/help to access this page.<br/>\n";
-
   void handleHelp() {
   server.send(200, "text/html", htmlBody_help);
   }*/
@@ -116,10 +116,10 @@ void send_notify(String api,String message,int priority,int retry) {
   Serial.println(po.send()); //should return 1 on success
 }
 void beep(unsigned char delayms){
-  analogWrite(buzzer, 100);      // Almost any value can be used except 0 and 255
+//  analogWrite(buzzer, 100);      // Almost any value can be used except 0 and 255
                            // experiment to get the best tone
   delay(delayms);          // wait for a delayms ms
-  analogWrite(buzzer, 0);       // 0 turns it off
+//  analogWrite(buzzer, 0);       // 0 turns it off
   delay(delayms);          // wait for a delayms ms   
 }  
 
@@ -178,7 +178,7 @@ void web_page() {
 
 }
 void info(){
-  String info="<h4 class='login-sub'>first name</h4><input class='input-1' id='fn' name='fn' length='32' value="+firstname+"><h4 class='login-sub'>last name</h4><input class='input-1' id='ln' name='ln' length='64'  value="+lastname+"><h4 class='login-sub'> weight</h4><input class='input-2' id='w' name='w' length='64'  value="+weight+"><h4 class='login-sub'>height</h4><input class='input-2' id='h' name='h' length='64'  value="+height+"><br><h4 class='login-sub'>brithday</h4><input  class='input-3' id='bd' type='date' name='bday' value="+brithday+" ><br><br><button type='submit'>save</button><br><br></form><a href='/'><button>back</button></a><br></div></div></body></html>";
+  String info="<h4 class='login-sub'>First name</h4><input class='input-1' id='fn' name='fn' length='32' value="+firstname+"><h4 class='login-sub'>Last name</h4><input class='input-1' id='ln' name='ln' length='64'  value="+lastname+"><h4 class='login-sub'>Blood type</h4><input class='input-1' id='bt' name='bt' length='64'  value="+bloodtype+"><h4 class='login-sub'> Weight</h4><input class='input-2' id='w' name='w' length='64'  value="+weight+"><h4 class='login-sub'>Height</h4><input class='input-2' id='h' name='h' length='64'  value="+height+"><br><h4 class='login-sub'>Birthday</h4><input  class='input-3' id='bd' type='date' name='bday' value="+brithday+" ><br><h4 class='login-sub'>Address</h4><input class='input-1' id='ad' name='ad' length='64' value="+address+"><h4 class='login-sub'>More Information</h4><input class='input-1' id='mf' name='mf' length='64' value="+moreinfo+"><br><br><button type='submit'>Save</button><br><br></form><a href='/'><button>Back</button></a><br></div></div></body></html>";
   server.send(200, "text/html", head_form+person_infohead + info);
 }
 void wifi() {
@@ -284,6 +284,9 @@ void handle_msg()
     }else if (server.argName(i) == "ln") {
       lastname = server.arg(i);
       lastname.trim();
+    }else if (server.argName(i) == "bt") {
+      bloodtype = server.arg(i);
+      bloodtype.trim();
     }else if (server.argName(i) == "w") {
       weight = server.arg(i);
       weight.trim();
@@ -293,6 +296,13 @@ void handle_msg()
     }else if (server.argName(i) == "bday") {
       brithday = server.arg(i);
       brithday.trim();
+    }
+    else if (server.argName(i) == "ad") {
+      address = server.arg(i);
+      address.trim();
+    }else if (server.argName(i) == "mf") {
+      moreinfo = server.arg(i);
+      moreinfo.trim();
     }
   }
   Serial.println("from web");
@@ -309,9 +319,12 @@ void handle_msg()
     file2.println("user key = " + User_key);
     file2.println("firstname = " +  firstname);
     file2.println("lastname = " + lastname);
+    file2.println("bloodtype = " + bloodtype);
     file2.println("weight = " +  weight);
-     file2.println("height = " +  height);
+    file2.println("height = " +  height);
     file2.println("brithday = " +  brithday);
+    file2.println("address = " +  address);
+    file2.println("moreinfo = " +  moreinfo);
     file2.close();
   }
 
@@ -411,7 +424,7 @@ void prepareFile() {
         //  Serial.println(ssid[sizeof(ssid)]);
         char ssid[current_ssid.length()];
         current_ssid.toCharArray(ssid, current_ssid.length());
-        Serial.println( current_ssid.length());
+        Serial.println(current_ssid.length());
         Serial.println(current_ssid);
         s++;
       } else if (line.startsWith("password = ")) {
@@ -420,7 +433,7 @@ void prepareFile() {
         current_password.trim();
         char password1[current_password.length()];
         current_password.toCharArray(password1, current_password.length());
-        Serial.println( current_password.length());
+        Serial.println(current_password.length());
         Serial.println(current_password);
 
         p++;
@@ -447,6 +460,12 @@ void prepareFile() {
         Serial.println(lastname.length());
         Serial.println(lastname);
 
+      }else if (line.startsWith("bloodtype = ")) {
+        bloodtype = line.substring(12);
+        bloodtype.trim();
+        Serial.println(bloodtype.length());
+        Serial.println(bloodtype);
+
       }else if (line.startsWith("weight = ")) {
         weight = line.substring(9);
         weight.trim();
@@ -464,6 +483,18 @@ void prepareFile() {
         brithday.trim();
         Serial.println(brithday.length());
         Serial.println(brithday);
+
+      }else if (line.startsWith("address = ")) {
+        address = line.substring(10);
+        address.trim();
+        Serial.println(address.length());
+        Serial.println(address);
+
+      }else if (line.startsWith("moreinfo = ")) {
+        moreinfo = line.substring(11);
+        moreinfo.trim();
+        Serial.println(moreinfo.length());
+        Serial.println(moreinfo);
 
       }
 
@@ -563,7 +594,7 @@ void setup_apmode() {
 }
 
 void IMUMPU6050_detec() {
-  Serial.println("IMUMPU6050");
+ // Serial.println("IMUMPU6050");
   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   tmp1_IMU = Raw_AM;
   tmp2_IMU = Raw_Gy;
@@ -574,13 +605,13 @@ void IMUMPU6050_detec() {
   
   filteredMeasurement_IMU = myFilter.getFilteredValue(z1);
   filteredMeasurement2_IMU = myFilter2.getFilteredValue(z2);
-    Serial.print(z1);
-  Serial.print(",");
-  Serial.print(filteredMeasurement_IMU);
-  Serial.print(",");
-  Serial.print(z2);
-  Serial.print(",");
-  Serial.println(filteredMeasurement2_IMU);
+//    Serial.print(z1);
+//  Serial.print(",");
+//  Serial.print(filteredMeasurement_IMU);
+//  Serial.print(",");
+//  Serial.print(z2);
+//  Serial.print(",");
+//  Serial.println(filteredMeasurement2_IMU);
   if (check_sleep_IMU == 1) {
 
     //Serial.println("in sleep");
@@ -635,18 +666,18 @@ void siren(){
          {
             
       digitalWrite(emergency_led, HIGH);
-      pinMode(vibration_motor, OUTPUT);
-      digitalWrite(vibration_motor , LOW);
-           tone(buzzer, freq, time);     // Beep pin, freq, time
+      //pinMode(vibration_motor, OUTPUT);
+     // digitalWrite(vibration_motor , LOW);
+//           tone(buzzer, freq, time);     // Beep pin, freq, time
            delay(5);
          }
       for(freq = 1800; freq > 500; freq -= 5) 
          {
           
-           tone(buzzer, freq, time);     // Beep pin, freq, time
+ //          tone(buzzer, freq, time);     // Beep pin, freq, time
          
           digitalWrite(emergency_led, LOW);
-          pinMode(vibration_motor, INPUT);
+       //   pinMode(vibration_motor, INPUT);
            delay(5);
          }
 }
@@ -654,8 +685,8 @@ void setup() {
   Serial.begin(115200);
 
   //set vibration to "Low" first
-  pinMode(vibration_motor, OUTPUT);
-  digitalWrite(vibration_motor, LOW);
+  //pinMode(vibration_motor, OUTPUT);
+  //digitalWrite(vibration_motor, LOW);
 //#ifdef ESP8266
 //  Wire.begin(5, 4);
 //#endif
@@ -674,9 +705,9 @@ void setup() {
   pinMode(wifi_led, OUTPUT);
   pinMode( battery_adc, INPUT);
   pinMode(battery_led , OUTPUT);
-  pinMode(buzzer , OUTPUT);
+//  pinMode(buzzer , OUTPUT);
   prepareFile();
-  pinMode(vibration_motor, INPUT);
+  //pinMode(vibration_motor, INPUT);
   timeOut = millis();
  
   beep(50);
@@ -774,11 +805,11 @@ void loop() {
 
       if (((timer - timeOut) / 1000) < 8) {
         digitalWrite(emergency_led, LOW);
-        pinMode(vibration_motor , OUTPUT);
-        digitalWrite(vibration_motor , LOW);
+       // pinMode(vibration_motor , OUTPUT);
+      //  digitalWrite(vibration_motor , LOW);
         delay(500);
         digitalWrite(emergency_led, HIGH);
-        pinMode(vibration_motor ,INPUT);
+     //   pinMode( ,INPUT);
         delay(500);
 
         if (buttonState == HIGH) {
@@ -795,8 +826,10 @@ void loop() {
         }
 
       } else {
+        
         Serial.println("notify()");
-        send_notify(Api_fall,"FALL DETECTION PLEASE CHECK "+firstname+" "+lastname,2,30); //ส่ง fall detec
+        String fullinfo = "Firstname : "+firstname+"\nLastname : "+lastname+"\nBloodtype : "+bloodtype+"\nWeight : "+weight+" Height : "+height+"\nMore Information : "+moreinfo;
+        send_notify(Api_fall,fullinfo,2,30); //ส่ง fall detec
         state = 2;
         Serial.println("back to state 2");
       }
@@ -811,7 +844,7 @@ void loop() {
         unsigned long timerAck = ((timer - preTime) / 1000);
         if ( timerAck >= 1) {
          
-         analogWrite(buzzer, 0);       // 0 turns it off
+     // analogWrite(buzzer, 0);       // 0 turns it off
           state = 4;
         }
 
@@ -824,7 +857,8 @@ void loop() {
       if (buttonState == HIGH) {
 
       } else {
-        send_notify(Api_press,firstname+" "+lastname+" HELP ME PLEASE !!!! ",2,30); //ส่ง fall detec
+        String fullinfo = "Firstname : "+firstname+"\nLastname : "+lastname+"\nMore Information : app.midatdb.com/PFrCbTJd2J";
+        send_notify(Api_press,fullinfo,2,30); //ส่ง fall detec
         state = 2;
       }
     } else if (state == 4) {
